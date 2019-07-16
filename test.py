@@ -3,6 +3,7 @@ import json
 import sqlite3
 import traceback
 import sys
+import time
 
 
 
@@ -33,31 +34,38 @@ daft.set_listing_type(RentType.ANY)
 offset = 0
 
 while 1:
-    daft.set_offset(offset)
-    print(offset)
-    listings = daft.search()
-    if not listings:
-        break
-    le = len(listings)
-    offset += le
-    print(listings[0].daft_link)
-    c = conn.cursor()
-    for listing in listings:
-        try:
-            t = {}
-            t['address'] = listing.formalised_address
-            t['link'] = listing.daft_link
-            #(listing.price/listing.bedrooms)
-            t['prices'] = transPrice(listing.price)/int(listing.bedrooms)
-            t['bedrooms'] = listing.bedrooms
-            t['city_center_distance'] = listing.city_center_distance
-            c.execute('INSERT INTO daft VALUES (?,?,?,?,?,?,?)', (t['link'], int(t['prices']), listing.price, t['bedrooms'], t['address'],t['city_center_distance'], int(listing.bathrooms)))
-        except Exception as e:
-            traceback.print_exc()
-            print(e)
-            print("fail link",listing.daft_link)
-    conn.commit()
-    sys.stdout.flush()
+    try:
+        daft.set_offset(offset)
+        print(offset)
+        listings = daft.search()
+        if not listings:
+            break
+        le = len(listings)
+        offset += le
+        print(listings[0].daft_link)
+        c = conn.cursor()
+        for listing in listings:
+            try:
+                t = {}
+                t['address'] = listing.formalised_address
+                t['link'] = listing.daft_link
+                #(listing.price/listing.bedrooms)
+                t['prices'] = transPrice(listing.price)/int(listing.bedrooms)
+                t['bedrooms'] = listing.bedrooms
+                t['city_center_distance'] = listing.city_center_distance
+                c.execute('INSERT INTO daft VALUES (?,?,?,?,?,?,?)', (t['link'], int(t['prices']), listing.price, t['bedrooms'], t['address'],t['city_center_distance'], int(listing.bathrooms)))
+            except Exception as e:
+                traceback.print_exc()
+                print(e)
+                print("fail link",listing.daft_link)
+        conn.commit()
+        sys.stdout.flush()
+    except Exception as e:
+        traceback.print_exc()
+        print(e)
+        offset+=1
+        time.sleep(5)
+
 
 
 
