@@ -1,5 +1,9 @@
 from daftlistings import Daft, RentType
 import json
+import sqlite3
+import traceback
+import sys
+
 
 
 
@@ -16,6 +20,7 @@ def transPrice(v):
 
 
 
+conn = sqlite3.connect('test.db')
 
 daft = Daft()
 
@@ -27,26 +32,37 @@ daft.set_listing_type(RentType.ANY)
 
 offset = 0
 
-with open("result","a+") as f:
-    while 1:
-        daft.set_offset(offset)
-        listings = daft.search()
-        if not listings:
-            break
-        le = len(listings)
-        offset += le
-        for listing in listings:
-            tmpres = {}
-            tmpres['address'] = listing.formalised_address
-            tmpres['link'] = listing.daft_link
-            #print(listing.price/listing.bedrooms)
-            tmpres['prices'] = transPrice(listing.price)/listing.bedrooms
-            tmpres['bedrooms'] = listing.bedrooms
-            tmpres['city_center_distance'] = listing.city_center_distance
-            f.write(json.dumps(tmpres))
-            f.write("\n")
-            f.flush()
+while 1:
+    daft.set_offset(offset)
+    print(offset)
+    listings = daft.search()
+    if not listings:
+        break
+    le = len(listings)
+    offset += le
+    print(listings[0].daft_link)
+    c = conn.cursor()
+    for listing in listings:
+        try:
+            t = {}
+            t['address'] = listing.formalised_address
+            t['link'] = listing.daft_link
+            #(listing.price/listing.bedrooms)
+            t['prices'] = transPrice(listing.price)/int(listing.bedrooms)
+            t['bedrooms'] = listing.bedrooms
+            t['city_center_distance'] = listing.city_center_distance
+            c.execute('INSERT INTO daft VALUES (?,?,?,?,?,?,?)', (t['link'], int(t['prices']), listing.price, t['bedrooms'], t['address'],t['city_center_distance'], int(listing.bathrooms)))
+        except Exception as e:
+            traceback.print_exc()
+            print(e)
+            print("fail link",listing.daft_link)
+    conn.commit()
+    sys.stdout.flush()
 
+
+
+sys.stdout.flush()
+conn.close()
 
 
 
