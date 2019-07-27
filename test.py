@@ -31,7 +31,7 @@ daft.set_listing_type(RentType.ANY)
 #daft.set_max_price(1500)
 
 
-offset = 0
+offset = 1580
 
 while 1:
     try:
